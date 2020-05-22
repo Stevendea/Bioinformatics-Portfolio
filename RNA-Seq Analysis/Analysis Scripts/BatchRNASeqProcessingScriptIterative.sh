@@ -28,26 +28,42 @@ cores=${3:-1}
 # Iterate through current working directory fq files
 for fq in *.fastq
 do
-	./IndividualRNASeqProcessing $fq $gtf $ref $cores
+	IndividualRNASeqProcessing $fq $gtf $ref $cores
 done
 
 # Perform multiqc on all fastqc files
 multiqc -o FASTQ_DIR FASTQ_DIR/fastqc
 
-# # Generate expression matrices for all analyzed files - CURRENTLY WORKS BUT NO GENE NAMES!!!
-# exdiras=EXPRESSION_DIR/all_samples_ST
-# exdirlist=`ls -dm $exdiras/*/ | tr -d '[:space:]'`
-# echo $exdirlist
+# Generate expression matrices for all analyzed files
+mkdir -p -m777 EXPRESSION_DIR/Combined_Output
+output=EXPRESSION_DIR/Combined_Output
+exdiras=EXPRESSION_DIR/all_samples_ST
+exdirco=EXPRESSION_DIR/Combined_Output
 
-# mkdir -p -m777 EXPRESSION_DIR/Combined_Output
-# output=EXPRESSION_DIR/Combined_Output
+# Create temp files of all gene_abundance.tsv's for every sample directory
+i=1
+add_line=""
+for dir in $exdiras/*
+do
+	base=`basename $dir`
+	if (( $i <= 1 )); 
+	then
+		add_line=$add_line$'Samples\t'$'\t'$base
+		cut -f 1-2,7-9 $dir/gene_abundances.tsv > $exdirco/$base.tsv
+		i=$((i+1))		
+	else
+		add_line=$add_line$'\t'$'\t'$'\t'$base
+		cut -f 7-9 $dir/gene_abundances.tsv > $exdirco/$base.tsv
+	fi
+	
+done
 
-# # TPM
-# stringtie_expression_matrix.pl --expression_metric=TPM --result_dirs="$exdirlist" --transcript_matrix_file=$output/transcript_tpm_all_samples.tsv --gene_matrix_file=$output/gene_tpm_all_samples.tsv
-# # FPKM
-# stringtie_expression_matrix.pl --expression_metric=FPKM --result_dirs="$exdirlist" --transcript_matrix_file=$output/transcript_fpkm_all_samples.tsv --gene_matrix_file=$output/gene_fpkm_all_samples.tsv
-# # Transcript Coverage
-# stringtie_expression_matrix.pl --expression_metric=Coverage --result_dirs="$exdirlist" --transcript_matrix_file=$output/transcript_coverage_all_samples.tsv --gene_matrix_file=$output/gene_coverage_all_samples.tsv
+# Paste all temporary files together into Combined_Output
+paste $exdirco/*.tsv > $exdirco/combined_expression.tsv
+
+# Add line at the top of combined_expression.tsv detailing the different samples
+# echo $add_line
+echo -e "$add_line" | cat - $exdirco/combined_expression.tsv > $exdirco/combined_expression_temp.tsv && mv $exdirco/combined_expression_temp.tsv $exdirco/combined_expression.tsv
 
 # End timing of the script
 end=`date +%s`

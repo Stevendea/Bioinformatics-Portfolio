@@ -3,6 +3,8 @@
 # Author: Steven Dea
 # Date Modified: 5/20/20
 
+# Still left to implement: Handling paired end reads
+
 # This script will run RNA-seq data pipeline within a project directory. It will only perform the following steps
 # on a single fastq file. It is incorporated into an outer running script that iterates through all files.
 # It will run fastqc, hisat2 alignment, samtools sam to bam/sort, and stringtie to generate expression estimates
@@ -139,7 +141,7 @@ printf "\nStringtie on $base.bam completed\n"
 # ’–type’ specifies the feature type (3rd column in GFF file) to be used. (default, suitable for RNA-Seq and Ensembl GTF files: exon)
 # ’–idattr’ The feature ID used to identify the counts in the output table. The default, suitable for RNA-SEq and Ensembl GTF files, is gene_id.
 printf "\nPerforming htseq-count on $base.bam"
-htseq-count --format bam --order pos --mode intersection-strict --minaqual 1 --type exon --idattr gene_id $adirbase/$base.bam $gtf > $base_htseq.tsv
+htseq-count --format bam --order pos --mode intersection-strict --minaqual 1 --type exon --idattr gene_id $adirbase/$base.bam $gtf > $edirbasehtc/$base_htseq.tsv
 printf "\nhtseq-count completed"
 
 # End timing of the script
